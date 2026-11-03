@@ -1,0 +1,35 @@
+# Web automation
+playwright>=1.40.0
+
+# PDF processing
+pdfplumber>=0.10.0
+PyMuPDF>=1.23.0            # PDF → image renderer (no poppler/system deps needed)
+pytesseract>=0.3.10        # Optional: brew install tesseract (cross-platform OCR fallback)
+Pillow>=10.0.0
+pyobjc-framework-Vision    # macOS native OCR – primary OCR engine, no system deps
+
+# Data models
+pydantic>=2.5.0
+
+# Credential storage (macOS Keychain)
+keyring>=24.0.0
+
+# Directory watching
+watchdog>=4.0.0
+
+# CLI / output
+rich>=13.0.0
+click>=8.1.0
+loguru>=0.7.0
+
+# Fuzzy name matching
+rapidfuzz>=3.5.0
+
+# Ollama local LLM client (optional but recommended for better OCR)
+ollama>=0.1.7
+
+# Google Generative AI (Gemini Vision API)
+google-generativeai>=0.8.0
+
+# Anthropic (Claude Vision API)
+anthropic>=0.40.0

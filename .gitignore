@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Project-specific ─────────────────────────────────────────
+
+# Machine-specific runtime config (recreated by 'python3 main.py config')
+config.json
+
+# PDF input/output queues (contain personal medical documents)
+input/*.pdf
+processed/*.pdf
+
+# Logs — contain PII (missionary names, medical data, screenshots)
+logs/
+
+# Ground-truth data — contains real missionary medical/dental records (PII/PHI)
+app/ground_truth*.json
+app/discovered_fields.json
+
+# Playwright browser state
+.playwright/
+
+# Credentials are stored in macOS Keychain — never in files
+*.credentials
+*.keychain
