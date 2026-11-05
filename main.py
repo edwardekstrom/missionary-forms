@@ -398,5 +398,65 @@ def clear_credentials():
     _clear()
 
 
+@cli.command()
+@click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--verified-dir", type=click.Path(path_type=Path), help="Directory for verified results")
+@click.option("--auto-submit/--no-auto-submit", default=False, help="Auto-submit after verification")
+def verify(pdf_path, verified_dir, auto_submit):
+    """Interactively verify and correct extracted form data before submission."""
+    from app.config import load_config
+    from app.form_parser import parse_forms
+    from app.pdf_processor import (
+        combine_pages,
+        detect_form_types,
+        extract_pdf_text,
+        parse_missionary_name_from_filename,
+    )
+    from app.web_automator import run_for_result
+    from app.verifier import run_verification_cli
+    
+    cfg = load_config()
+    if verified_dir is None:
+        verified_dir = Path(cfg.get("verified_dir", "verified"))
+    
+    console.rule(f"[bold cyan]Verification: {pdf_path.name}[/bold cyan]")
+    
+    from app.pdf_processor import (
+        combine_pages,
+        detect_form_types,
+        extract_pdf_text,
+        parse_missionary_name_from_filename,
+    )
+    from app.form_parser import parse_forms
+    from app.web_automator import run_for_result
+    
+    pages = extract_pdf_text(pdf_path)
+    full_text = combine_pages(pages)
+    missionary_name = parse_missionary_name_from_filename(pdf_path.name)
+    has_medical, has_dental = detect_form_types(pdf_path.name, full_text)
+    
+    console.print(f"[bold]Missionary:[/bold] {missionary_name}")
+    console.print(f"[bold]Forms:[/bold] {'Medical' if has_medical else ''} {'Dental' if has_dental else ''}")
+    
+    result = parse_forms(
+        text=full_text,
+        missionary_name=missionary_name,
+        pdf_path=str(pdf_path),
+        has_medical=has_medical,
+        has_dental=has_dental,
+    )
+    
+    result = run_verification_cli(result, verified_dir)
+    
+    if auto_submit and not Confirm.ask("\nSubmit to website now?"):
+        auto_submit = False
+    
+    if auto_submit:
+        from app.web_automator import run_for_result
+        run_for_result(result, dry_run=False)
+    else:
+        console.print("\n[dim]Run 'python main.py process' with the PDF to submit after verification.[/dim]")
+
+
 if __name__ == "__main__":
     cli()

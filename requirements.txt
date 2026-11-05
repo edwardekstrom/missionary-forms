@@ -33,3 +33,6 @@ google-generativeai>=0.8.0
 
 # Anthropic (Claude Vision API)
 anthropic>=0.40.0
+
+# OpenAI (for OpenRouter API)
+openai>=1.0.0

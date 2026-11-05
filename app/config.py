@@ -12,6 +12,7 @@ INPUT_DIR = BASE_DIR / "input"
 PROCESSED_DIR = BASE_DIR / "processed"
 LOGS_DIR = BASE_DIR / "logs"
 SCREENSHOTS_DIR = LOGS_DIR / "screenshots"
+VERIFIED_DIR = BASE_DIR / "verified"
 CONFIG_FILE = BASE_DIR / "config.json"
 
 CHURCH_URL = "https://missionaryrecommendations.churchofjesuschrist.org/recommendations/home/candidates?vctype=ft"
@@ -25,6 +26,9 @@ DEFAULT_CONFIG = {
     "gemini_enabled": False,            # Use Gemini Vision as primary parser (requires GEMINI_API_KEY)
     "gemini_model": "gemini-1.5-flash",  # Gemini model to use
     "gemini_api_key": "",               # Gemini API key (set via environment or config)
+    "openrouter_enabled": False,        # Use OpenRouter Vision as fallback parser (requires OPENROUTER_API_KEY)
+    "openrouter_model": "openai/gpt-4o",  # OpenRouter model to use
+    "openrouter_api_key": "",           # OpenRouter API key (set via environment or config)
     "claude_enabled": False,            # Use Claude Vision as fallback parser (requires ANTHROPIC_API_KEY)
     "claude_model": "claude-3-5-sonnet-20241022",  # Claude model to use
     "claude_api_key": "",               # Claude API key (set via environment or config)
@@ -44,7 +48,7 @@ DEFAULT_CONFIG = {
 
 
 def ensure_dirs():
-    for d in [INPUT_DIR, PROCESSED_DIR, LOGS_DIR, SCREENSHOTS_DIR]:
+    for d in [INPUT_DIR, PROCESSED_DIR, LOGS_DIR, SCREENSHOTS_DIR, VERIFIED_DIR]:
         d.mkdir(parents=True, exist_ok=True)
 
 

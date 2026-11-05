@@ -1948,7 +1948,30 @@ def parse_forms(
         except Exception as e:
             logger.warning(f"Gemini parser unavailable: {e}")
 
-    # ── Step 3: Ollama Vision (fallback / gap-fill) ───────────────────────
+    # ── Step 3: OpenRouter Vision (fallback / gap-fill) ───────────────────────
+    openrouter_med = None
+    openrouter_dnt = None
+    if config.get("openrouter_enabled"):
+        try:
+            from .openrouter_parser import parse_with_openrouter, render_pages
+            openrouter_pages = pages if pages else render_pages(pdf_path, dpi=150)
+            openrouter_med, openrouter_dnt, openrouter_errors = parse_with_openrouter(
+                openrouter_pages, has_medical, has_dental,
+                api_key=config.get("openrouter_api_key", ""),
+                model=config.get("openrouter_model", "openai/gpt-4o"),
+            )
+            for err in openrouter_errors:
+                result.warnings.append(err)
+            if openrouter_errors:
+                logger.warning(f"OpenRouter errors: {openrouter_errors}")
+            if openrouter_med:
+                logger.info(f"OpenRouter medical extraction succeeded for {missionary_name}")
+            if openrouter_dnt:
+                logger.info(f"OpenRouter dental extraction succeeded for {missionary_name}")
+        except Exception as e:
+            logger.warning(f"OpenRouter parser unavailable: {e}")
+
+    # ── Step 4: Ollama Vision (fallback / gap-fill) ───────────────────────
     ollama_med = None
     ollama_dnt = None
     if config.get("ollama_enabled", True):
@@ -1990,12 +2013,19 @@ def parse_forms(
         except Exception as e:
             logger.warning(f"Claude parser unavailable: {e}")
 
-    # ── Step 5: Merge — Gemini > Ollama > Claude > regex ──────────────────────
+    # ── Step 5: Merge — Gemini > OpenRouter > Ollama > Claude > regex ──────────────────────
     if has_medical:
-        if gemini_med and ollama_med:
-            best_vision_med = _merge_medical(gemini_med, ollama_med)
+        # Merge in priority order: Gemini > OpenRouter > Ollama > Claude
+        best_vision_med = None
+        if gemini_med and openrouter_med:
+            best_vision_med = _merge_medical(gemini_med, openrouter_med)
         else:
-            best_vision_med = gemini_med or ollama_med
+            best_vision_med = gemini_med or openrouter_med
+        
+        if best_vision_med and ollama_med:
+            best_vision_med = _merge_medical(best_vision_med, ollama_med)
+        elif ollama_med and not best_vision_med:
+            best_vision_med = ollama_med
         
         if best_vision_med and claude_med:
             best_vision_med = _merge_medical(best_vision_med, claude_med)
@@ -2006,6 +2036,7 @@ def parse_forms(
             result.medical = _merge_medical(best_vision_med, regex_med)
             sources = []
             if gemini_med: sources.append("Gemini")
+            if openrouter_med: sources.append("OpenRouter")
             if ollama_med: sources.append("Ollama")
             if claude_med: sources.append("Claude")
             src = "+".join(sources) + "+regex"
@@ -2013,6 +2044,7 @@ def parse_forms(
         elif best_vision_med:
             sources = []
             if gemini_med: sources.append("Gemini")
+            if openrouter_med: sources.append("OpenRouter")
             if ollama_med: sources.append("Ollama")
             if claude_med: sources.append("Claude")
             src = "+".join(sources)
@@ -2022,10 +2054,16 @@ def parse_forms(
             logger.info(f"Medical: regex only for {missionary_name}")
 
     if has_dental:
-        if gemini_dnt and ollama_dnt:
-            best_vision_dnt = _merge_dental(gemini_dnt, ollama_dnt)
+        best_vision_dnt = None
+        if gemini_dnt and openrouter_dnt:
+            best_vision_dnt = _merge_dental(gemini_dnt, openrouter_dnt)
         else:
-            best_vision_dnt = gemini_dnt or ollama_dnt
+            best_vision_dnt = gemini_dnt or openrouter_dnt
+        
+        if best_vision_dnt and ollama_dnt:
+            best_vision_dnt = _merge_dental(best_vision_dnt, ollama_dnt)
+        elif ollama_dnt and not best_vision_dnt:
+            best_vision_dnt = ollama_dnt
         
         if best_vision_dnt and claude_dnt:
             best_vision_dnt = _merge_dental(best_vision_dnt, claude_dnt)
@@ -2036,6 +2074,7 @@ def parse_forms(
             result.dental = _merge_dental(best_vision_dnt, regex_dnt)
             sources = []
             if gemini_dnt: sources.append("Gemini")
+            if openrouter_dnt: sources.append("OpenRouter")
             if ollama_dnt: sources.append("Ollama")
             if claude_dnt: sources.append("Claude")
             src = "+".join(sources) + "+regex"
@@ -2043,6 +2082,7 @@ def parse_forms(
         elif best_vision_dnt:
             sources = []
             if gemini_dnt: sources.append("Gemini")
+            if openrouter_dnt: sources.append("OpenRouter")
             if ollama_dnt: sources.append("Ollama")
             if claude_dnt: sources.append("Claude")
             src = "+".join(sources)
